@@ -5,36 +5,63 @@ import (
 
 	"github.com/0xmuralik/file-share/database"
 	"github.com/0xmuralik/file-share/file"
-	"github.com/gofiber/fiber"
+	"github.com/0xmuralik/file-share/user"
+	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/jinzhu/gorm"
 )
 
 func routes(app *fiber.App) {
-	app.Get("/api/v1/file/id/:file_id", file.GetFileById)
-	app.Get("/api/v1/file/name/:name", file.GetFileByName)
-	app.Get("/api/v1/file/:owner", file.GetFiles)
-	app.Post("/api/v1/file", file.NewFile)
-	app.Delete("/api/v1/file/:id", file.DeleteFile)
+	api := app.Group("/api")
+
+	v1 := api.Group("/v1")
+
+	userAPI := v1.Group("/user")
+	userAPI.Post("/login", user.LogIn)
+	userAPI.Post("/logout", user.LogOut)
+	userAPI.Post("/register", user.Register)
+	userAPI.Get("/home", user.Home)
+
+	fileAPI := v1.Group("/file")
+	fileAPI.Get("/id/:file_id", file.GetFileById)
+	fileAPI.Get("/name/:name", file.GetFileByName)
+	fileAPI.Get("/:owner", file.GetFiles)
+	fileAPI.Post("/new", file.NewFile)
+	fileAPI.Delete("/:id", file.DeleteFile)
 }
 
 func initDatabase() {
 	var err error
-	database.DBConn, err = gorm.Open("sqlite3", "files.db")
+	database.FileDBConn, err = gorm.Open("sqlite3", "files.db")
 	if err != nil {
-		panic("failed to connect database")
+		panic("failed to connect file database")
 	}
-	fmt.Println("connected to database")
+	fmt.Println("connected to file database")
 
-	database.DBConn.AutoMigrate(&file.File{})
-	fmt.Println("database migrated")
+	database.FileDBConn.AutoMigrate(&file.File{})
+	fmt.Println("file database migrated")
+
+	database.UserDBConn, err = gorm.Open("sqlite3", "users.db")
+	if err != nil {
+		panic("failed to connect user database")
+	}
+	fmt.Println("connected to user database")
+
+	database.UserDBConn.AutoMigrate(&user.User{})
+	fmt.Println("user database migrated")
+
+	user.Store = session.New()
+	fmt.Println("Initialized session store")
 }
 
 func main() {
 	app := fiber.New()
 
 	initDatabase()
-	defer database.DBConn.Close()
+	defer database.FileDBConn.Close()
 
 	routes(app)
-	app.Listen(3000)
+	if err := app.Listen(":3000"); err != nil {
+		panic(err)
+	}
 }

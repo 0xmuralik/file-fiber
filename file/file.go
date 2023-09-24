@@ -85,7 +85,7 @@ func DeleteFile(ctx *fiber.Ctx) error {
 	id := ctx.Params("file_id")
 
 	var file File
-	res := db.First(&file, id)
+	res := db.First(&file, "file_id=?", id)
 	if res.Error != nil {
 		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find file: %s", res.Error.Error()))
 	}

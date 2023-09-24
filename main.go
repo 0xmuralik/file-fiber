@@ -27,7 +27,7 @@ func routes(app *fiber.App) {
 	fileAPI.Get("/name/:name", file.GetFileByName)
 	fileAPI.Get("/:owner", file.GetFiles)
 	fileAPI.Post("/new", file.NewFile)
-	fileAPI.Delete("/:id", file.DeleteFile)
+	fileAPI.Delete("/:file_id", file.DeleteFile)
 }
 
 func initDatabase() {

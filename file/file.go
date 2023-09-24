@@ -21,7 +21,11 @@ func GetFiles(ctx *fiber.Ctx) error {
 	var files []File
 
 	owner := ctx.Params("owner")
-	db.Find(&files, "owner=?", owner)
+	res := db.Find(&files, "owner=?", owner)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find files: %s", res.Error.Error()))
+	}
+
 	ctx.JSON(files)
 
 	return nil
@@ -33,7 +37,10 @@ func GetFileByName(ctx *fiber.Ctx) error {
 	name := ctx.Params("name")
 
 	var files []File
-	db.Find(&files, "name=?", name)
+	res := db.Find(&files, "name=?", name)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find files: %s", res.Error.Error()))
+	}
 	ctx.JSON(files)
 
 	return nil
@@ -45,7 +52,11 @@ func GetFileById(ctx *fiber.Ctx) error {
 	id := ctx.Params("file_id")
 
 	var file File
-	db.Find(&file, "file_id=?", id)
+	res := db.Find(&file, "file_id=?", id)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find file: %s", res.Error.Error()))
+	}
+
 	ctx.JSON(file)
 
 	return nil
@@ -59,7 +70,10 @@ func NewFile(ctx *fiber.Ctx) error {
 		ctx.Status(503)
 		return err
 	}
-	db.Create(&file)
+	res := db.Create(&file)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot create file: %s", res.Error.Error()))
+	}
 	ctx.JSON(file)
 
 	return nil
@@ -71,12 +85,21 @@ func DeleteFile(ctx *fiber.Ctx) error {
 	id := ctx.Params("file_id")
 
 	var file File
-	db.First(&file, id)
+	res := db.First(&file, id)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find file: %s", res.Error.Error()))
+	}
+
 	if file.Name == "" {
 		ctx.Status(500)
 		return fmt.Errorf("No file found")
 	}
-	db.Delete(&file)
+
+	res = db.Delete(&file)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot delete file: %s", res.Error.Error()))
+	}
+
 	ctx.SendString("File deleted successfully")
 
 	return nil

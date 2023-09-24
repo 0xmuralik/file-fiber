@@ -60,12 +60,20 @@ func Delete(ctx *fiber.Ctx) error {
 	username := sess.Get("user")
 
 	var user User
-	db.First(&user, "username=?", username)
+	res := db.First(&user, "username=?", username)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find user: %s", res.Error.Error()))
+	}
+
 	if user.Username == "" {
 		return ctx.Status(500).SendString("No file found")
 	}
 
-	db.Delete(&user)
+	res = db.Delete(&user)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot delete user: %s", res.Error.Error()))
+	}
+
 	ctx.Status(200).SendString("User deleted successfully")
 	return ctx.Redirect("/home")
 }
@@ -83,7 +91,10 @@ func LogIn(ctx *fiber.Ctx) error {
 	}
 
 	var user User
-	db.Find(&user, "username=?", req.Username)
+	res := db.Find(&user, "username=?", req.Username)
+	if res.Error != nil {
+		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find user: %s", res.Error.Error()))
+	}
 
 	if user.Username != "" && user.Password == req.Password {
 		sess.Set("authenticated", true)

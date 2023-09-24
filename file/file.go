@@ -23,12 +23,10 @@ func GetFiles(ctx *fiber.Ctx) error {
 	owner := ctx.Params("owner")
 	res := db.Find(&files, "owner=?", owner)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find files: %s", res.Error.Error()))
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot find files, %s", res.Error.Error()))
 	}
 
-	ctx.JSON(files)
-
-	return nil
+	return ctx.JSON(files)
 }
 
 func GetFileByName(ctx *fiber.Ctx) error {
@@ -39,11 +37,10 @@ func GetFileByName(ctx *fiber.Ctx) error {
 	var files []File
 	res := db.Find(&files, "name=?", name)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find files: %s", res.Error.Error()))
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot find files, %s", res.Error.Error()))
 	}
-	ctx.JSON(files)
 
-	return nil
+	return ctx.JSON(files)
 }
 
 func GetFileById(ctx *fiber.Ctx) error {
@@ -54,12 +51,10 @@ func GetFileById(ctx *fiber.Ctx) error {
 	var file File
 	res := db.Find(&file, "file_id=?", id)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find file: %s", res.Error.Error()))
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot find file, %s", res.Error.Error()))
 	}
 
-	ctx.JSON(file)
-
-	return nil
+	return ctx.JSON(file)
 }
 
 func NewFile(ctx *fiber.Ctx) error {
@@ -67,16 +62,15 @@ func NewFile(ctx *fiber.Ctx) error {
 
 	file := new(File)
 	if err := ctx.BodyParser(file); err != nil {
-		ctx.Status(503)
-		return err
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot parse file: %s", err))
 	}
+
 	res := db.Create(&file)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot create file: %s", res.Error.Error()))
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot create file: %s", res.Error.Error()))
 	}
-	ctx.JSON(file)
 
-	return nil
+	return ctx.JSON(file)
 }
 
 func DeleteFile(ctx *fiber.Ctx) error {
@@ -87,20 +81,13 @@ func DeleteFile(ctx *fiber.Ctx) error {
 	var file File
 	res := db.First(&file, "file_id=?", id)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot find file: %s", res.Error.Error()))
-	}
-
-	if file.Name == "" {
-		ctx.Status(500)
-		return fmt.Errorf("No file found")
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot find file, %s", res.Error.Error()))
 	}
 
 	res = db.Delete(&file)
 	if res.Error != nil {
-		return ctx.Status(503).SendString(fmt.Sprintf("Cannot delete file: %s", res.Error.Error()))
+		return ctx.Status(503).SendString(fmt.Sprintf("cannot delete file, %s", res.Error.Error()))
 	}
 
-	ctx.SendString("File deleted successfully")
-
-	return nil
+	return ctx.SendString("File deleted successfully")
 }

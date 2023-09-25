@@ -79,7 +79,6 @@ func Delete(ctx *fiber.Ctx) error {
 }
 
 func LogIn(ctx *fiber.Ctx) error {
-
 	db := database.UserDBConn
 	sess, err := Store.Get(ctx)
 	if err != nil {
@@ -101,9 +100,8 @@ func LogIn(ctx *fiber.Ctx) error {
 		sess.Set("user", user.Username)
 		sess.Save()
 		ctx.SendString(fmt.Sprintf("User logged in successfully. Username: %s", user.Username))
-		return ctx.Redirect("/api/v1/user/home")
+		return ctx.Redirect("/home")
 	}
-
 	return ctx.Status(503).SendString("Invalid username or password")
 }
 
@@ -117,5 +115,18 @@ func LogOut(ctx *fiber.Ctx) error {
 	sess.Save()
 	ctx.SendString("User logged out")
 
-	return ctx.Redirect("/api/v1/user/home")
+	return ctx.Redirect("/home")
+}
+
+func CheckLogin(ctx *fiber.Ctx) error {
+	sess, err := Store.Get(ctx)
+	if err != nil {
+		return ctx.Status(500).SendString(fmt.Sprintf("cannot get session: %v", err))
+	}
+
+	if auth := sess.Get("authenticated"); auth == nil || !auth.(bool) {
+		return ctx.Redirect("/user/login")
+	}
+
+	return ctx.Next()
 }

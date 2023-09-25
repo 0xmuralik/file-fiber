@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/0xmuralik/file-share/database"
 	fiber "github.com/gofiber/fiber/v2"
@@ -13,7 +14,8 @@ type File struct {
 	FileId int    `json:"file_id"`
 	Name   string `json:"name"`
 	Owner  string `json:"owner"`
-	// Data   []byte `json:"data"`
+	Data   []byte `json:"data"`
+	Type   string `json:"type"`
 }
 
 func GetFiles(ctx *fiber.Ctx) error {
@@ -33,9 +35,14 @@ func GetFileByName(ctx *fiber.Ctx) error {
 	db := database.FileDBConn
 
 	name := ctx.Params("name")
+	name, err := url.QueryUnescape(name)
+	if err != nil {
+		return ctx.Status(500).SendString(fmt.Sprintf("invalid name: %s", err.Error()))
+	}
 
 	var files []File
 	res := db.Find(&files, "name=?", name)
+
 	if res.Error != nil {
 		return ctx.Status(503).SendString(fmt.Sprintf("cannot find files, %s", res.Error.Error()))
 	}
